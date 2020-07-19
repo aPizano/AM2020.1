@@ -1,0 +1,51 @@
+# Importar dados do CSV dados
+dados = read.table("CAMINHO PARA - qsar_oral_toxicity.csv",sep=";",dec=",")
+
+
+# Análise dos dados
+dim(dados) # n = 8992; k = 1024;
+n = dim(dados)[1]
+k = dim(dados)[2] - 1
+
+x = as.matrix(dados[,1:k])
+y = as.matrix(dados[,k+1])
+
+sum(length(which(y=="positive"))) # 741
+sum(length(which(y=="negative"))) # 8251
+
+y = y=="positive"
+y = as.numeric(y)
+
+mcor = cor(y, x)
+mcor = as.vector(mcor)
+hist(mcor,100)
+mdx = rep(0,k)
+for(i in 1:k)
+{
+	mdx[i] = mean(x[,i])
+}
+
+
+# Índice de Jaccard
+if(!require(jaccard)){install.packages("jaccard")}
+library(jaccard)
+
+jt = rep(0,k)
+pjt = rep(0,k)
+for(i in 1:k)
+{
+	jt[i] = jaccard(x[,i],y)
+	pjt[i] = jaccard.test(x[,i], y, method="asymptotic")$pvalue
+}
+
+
+# Figuras usadas no artigo
+hist(mdx, 100, main = "Média de 1024 Atributos", xlab = "Média", ylab = "Frequência")
+hist(mcor, 100, main = "Correlação de Spearman de 1024 Atributos", xlab = "Correlação", ylab = "Frequência")
+hist(jt, 100, main = "Índice de Similaridade de Jaccard de 1024 Atributos", xlab = "Jaccard", ylab = "Frequência")
+hist(pjt, 100, main = "P-valor do Teste de Jaccard de 1024 Atributos", xlab = "P-valor", ylab = "Frequência")
+
+
+# Remover atributos que não apresentam similaridade significativa
+sum(length(which(pjt<0.05))) # 536
+x = x[,which(pjt<0.05)]
